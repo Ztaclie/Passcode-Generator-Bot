@@ -1,11 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
-const telegramService = require('./telegramService');
-const config = require('../config/config');
 
 class PasscodeService {
     constructor() {
         this.currentPasscode = null;
         this.lastGeneratedAt = null;
+        this.generatePasscode = this.generatePasscode.bind(this);
+        this.getCurrentPasscode = this.getCurrentPasscode.bind(this);
+        this.getLastGeneratedAt = this.getLastGeneratedAt.bind(this);
     }
 
     generatePasscode() {
@@ -21,17 +22,7 @@ class PasscodeService {
     getLastGeneratedAt() {
         return this.lastGeneratedAt;
     }
-
-    async sendPasscodeToTelegram(passcode, message) {
-        if (!passcode) {
-            throw new Error('No passcode provided');
-        }
-        await telegramService.sendMessage(
-            config.telegram.chatId,
-            `${message}\n\nYour passcode is: \`${passcode}\`\n\nGenerated at: ${this.lastGeneratedAt.toISOString()}`,
-            { parse_mode: 'Markdown' }
-        );
-    }
 }
 
-module.exports = new PasscodeService(); 
+const passcodeService = new PasscodeService();
+module.exports = passcodeService; 

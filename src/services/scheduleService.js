@@ -1,5 +1,6 @@
 const cron = require('cron');
 const passcodeService = require('./passcodeService');
+const telegramService = require('./telegramService');
 
 class ScheduleService {
     constructor() {
@@ -12,21 +13,21 @@ class ScheduleService {
         this.dailyJob = new cron.CronJob('0 0 * * *', () => {
             if (this.scheduleState.enabled && this.scheduleState.type === 'daily') {
                 const newPasscode = passcodeService.generatePasscode();
-                passcodeService.sendPasscodeToTelegram(newPasscode, '🔄 Daily Passcode Update!');
+                telegramService.sendPasscodeToTelegram(newPasscode, '🔄 Daily Passcode Update!');
             }
         });
 
         this.weeklyJob = new cron.CronJob('0 0 * * 0', () => {
             if (this.scheduleState.enabled && this.scheduleState.type === 'weekly') {
                 const newPasscode = passcodeService.generatePasscode();
-                passcodeService.sendPasscodeToTelegram(newPasscode, '📅 Weekly Passcode Update!');
+                telegramService.sendPasscodeToTelegram(newPasscode, '📅 Weekly Passcode Update!');
             }
         });
 
         this.monthlyJob = new cron.CronJob('0 0 1 * *', () => {
             if (this.scheduleState.enabled && this.scheduleState.type === 'monthly') {
                 const newPasscode = passcodeService.generatePasscode();
-                passcodeService.sendPasscodeToTelegram(newPasscode, '📆 Monthly Passcode Update!');
+                telegramService.sendPasscodeToTelegram(newPasscode, '📆 Monthly Passcode Update!');
             }
         });
     }

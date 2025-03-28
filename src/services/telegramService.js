@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const config = require('../config/config');
 const passcodeService = require('./passcodeService');
 const scheduleService = require('./scheduleService');
+const { formatDateTime } = require('../utils/dateFormatter');
 
 class TelegramService {
     constructor() {
@@ -9,13 +10,23 @@ class TelegramService {
         this.setupCommandHandlers();
     }
 
+    async sendPasscodeToTelegram(passcode, message) {
+        if (!passcode) {
+            throw new Error('No passcode provided');
+        }
+        await this.sendMessage(
+            config.telegram.chatId,
+            `${message}\n\nYour passcode is: \`${passcode}\`\n\nGenerated at: ${formatDateTime(passcodeService.getLastGeneratedAt())}`,
+            { parse_mode: 'Markdown' }
+        );
+    }
+
     setupCommandHandlers() {
         this.bot.onText(/\/start/, this.handleStart.bind(this));
         this.bot.onText(/\/help/, this.handleHelp.bind(this));
         this.bot.onText(/\/new/, this.handleNew.bind(this));
         this.bot.onText(/\/current/, this.handleCurrent.bind(this));
-        this.bot.onText(/\/schedule (.+)/, this.handleSchedule.bind(this));
-        this.bot.onText(/\/status/, this.handleStatus.bind(this));
+        this.bot.onText(/\/schedule(?:\s+(.+))?/, this.handleSchedule.bind(this));
     }
 
     async sendMessage(chatId, message, options = {}) {
@@ -33,8 +44,8 @@ class TelegramService {
             'Available commands:\n' +
             '/new - Generate a new passcode\n' +
             '/current - Get current passcode\n' +
-            '/schedule - Set schedule (daily/weekly/monthly/infinite)\n' +
-            '/status - Show current schedule status\n' +
+            '/schedule - Show current schedule status\n' +
+            '/schedule [type] - Set schedule (daily/weekly/monthly/infinite)\n' +
             '/help - Show this help message'
         );
     }
@@ -45,8 +56,8 @@ class TelegramService {
             'Available commands:\n' +
             '/new - Generate a new passcode\n' +
             '/current - Get current passcode\n' +
-            '/schedule - Set schedule (daily/weekly/monthly/infinite)\n' +
-            '/status - Show current schedule status\n' +
+            '/schedule - Show current schedule status\n' +
+            '/schedule [type] - Set schedule (daily/weekly/monthly/infinite)\n' +
             '/help - Show this help message'
         );
     }
@@ -55,7 +66,7 @@ class TelegramService {
         const chatId = msg.chat.id;
         const newPasscode = passcodeService.generatePasscode();
         await this.sendMessage(chatId, 
-            `🔐 New Passcode Generated!\n\nYour passcode is: \`${newPasscode}\`\n\nGenerated at: ${new Date().toISOString()}`, 
+            `🔐 New Passcode Generated!\n\nYour passcode is: \`${newPasscode}\`\n\nGenerated at: ${formatDateTime(passcodeService.getLastGeneratedAt())}`, 
             { parse_mode: 'Markdown' }
         );
     }
@@ -68,13 +79,21 @@ class TelegramService {
             return;
         }
         await this.sendMessage(chatId, 
-            `📋 Current Passcode:\n\nYour passcode is: \`${currentPasscode}\`\n\nGenerated at: ${new Date().toISOString()}`, 
+            `📋 Current Passcode:\n\nYour passcode is: \`${currentPasscode}\`\n\nGenerated at: ${formatDateTime(passcodeService.getLastGeneratedAt())}`, 
             { parse_mode: 'Markdown' }
         );
     }
 
     async handleSchedule(msg, match) {
         const chatId = msg.chat.id;
+        
+        // If no schedule type provided, show current status
+        if (!match[1]) {
+            const status = await scheduleService.getStatus();
+            await this.sendMessage(chatId, status);
+            return;
+        }
+
         const scheduleType = match[1].toLowerCase();
 
         if (!['daily', 'weekly', 'monthly', 'infinite'].includes(scheduleType)) {
@@ -89,12 +108,6 @@ class TelegramService {
             `✅ Schedule set to: ${scheduleType.toUpperCase()}\n` +
             `Status: ${scheduleType !== 'infinite' ? 'Enabled' : 'Disabled'}`
         );
-    }
-
-    async handleStatus(msg) {
-        const chatId = msg.chat.id;
-        const status = await scheduleService.getStatus();
-        await this.sendMessage(chatId, status);
     }
 }
 

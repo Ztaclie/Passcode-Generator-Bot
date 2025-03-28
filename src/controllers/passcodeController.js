@@ -1,27 +1,36 @@
 const passcodeService = require('../services/passcodeService');
+const telegramService = require('../services/telegramService');
 const logger = require('../utils/logger');
+const { formatDateTime } = require('../utils/dateFormatter');
 
 class PasscodeController {
-    async getCurrentPasscode(req, res) {
+    async validatePasscode(req, res) {
         try {
-            logger.info('Request received for current passcode');
-            const currentPasscode = passcodeService.getCurrentPasscode();
+            logger.info('Request received for passcode validation');
+            const { passcode } = req.body;
             
+            if (!passcode) {
+                logger.warn('No passcode provided in request');
+                return res.status(400).json({ error: 'Passcode is required' });
+            }
+
+            const currentPasscode = passcodeService.getCurrentPasscode();
             if (!currentPasscode) {
-                logger.warn('No passcode found');
+                logger.warn('No passcode has been generated yet');
                 return res.status(404).json({ error: 'No passcode generated yet' });
             }
 
-            await passcodeService.sendPasscodeToTelegram(currentPasscode, '📋 Current Passcode:');
-            logger.info('Current passcode retrieved and sent to Telegram');
+            const isValid = passcode === currentPasscode;
+            logger.info(`Passcode validation result: ${isValid}`);
             
             res.json({ 
-                passcode: currentPasscode,
-                generatedAt: passcodeService.getLastGeneratedAt()
+                isValid,
+                message: isValid ? 'Passcode is valid' : 'Passcode is invalid',
+                generatedAt: formatDateTime(passcodeService.getLastGeneratedAt())
             });
         } catch (error) {
-            logger.error('Error retrieving passcode:', error);
-            res.status(500).json({ error: 'Failed to retrieve passcode' });
+            logger.error('Error validating passcode:', error);
+            res.status(500).json({ error: 'Failed to validate passcode' });
         }
     }
 }

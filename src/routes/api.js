@@ -2,6 +2,6 @@ const express = require('express');
 const router = express.Router();
 const passcodeController = require('../controllers/passcodeController');
 
-router.get('/current', passcodeController.getCurrentPasscode);
+router.post('/validate', passcodeController.validatePasscode);
 
 module.exports = router; 
