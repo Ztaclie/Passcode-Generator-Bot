@@ -8,7 +8,22 @@ class ChatService {
         this.authorizedChats = new Map();
         this.adminChatId = config.telegram.adminChatId;
         this.storageFile = path.join(__dirname, '../../data/chats.json');
-        this.loadChats();
+        this.loadChats().then(() => {
+            // Add admin chat if not already present
+            if (!this.isAuthorizedChat(this.adminChatId)) {
+                const adminChatInfo = {
+                    addedBy: 'system',
+                    addedAt: new Date(),
+                    scheduleType: 'infinite',
+                    isActive: true,
+                    lastPasscode: null,
+                    lastPasscodeGeneratedAt: null
+                };
+                this.authorizedChats.set(this.adminChatId.toString(), adminChatInfo);
+                this.saveChats();
+                logger.info(`Admin chat ${this.adminChatId} added automatically`);
+            }
+        });
     }
 
     async loadChats() {

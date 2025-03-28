@@ -1,118 +1,143 @@
-# Passcode Generator
+# Passcode Generator Bot
 
-A Node.js application that generates random passcodes (UUIDs) and sends them to a Telegram bot. The passcodes can be generated on-demand or scheduled (daily/weekly/monthly/infinite).
+A Telegram bot that generates and manages passcodes with scheduling capabilities.
 
 ## Features
 
-- Generates random UUIDs as passcodes
-- Interactive Telegram bot interface
-- Flexible scheduling options (daily/weekly/monthly/infinite)
-- Schedule control through Telegram commands
-- Comprehensive logging system
-- Simple REST API endpoint
-- Clean architecture with separation of concerns
+- Generate unique passcodes
+- Schedule passcode updates (daily/weekly/monthly/infinite)
+- Admin-based chat management
+- Persistent chat storage
+- API endpoint for passcode validation
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - npm or yarn
-- A Telegram bot token (get it from @BotFather)
+- Telegram Bot Token (get it from [@BotFather](https://t.me/botfather))
 
-## Setup
+## Installation
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Copy the environment file:
-   ```bash
-   cp .env.example .env
-   ```
-4. Edit the `.env` file with your configuration:
-   - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather
-
-## Running the Application
-
-Development mode:
+1. Clone the repository:
 ```bash
-npm run dev
+git clone https://github.com/yourusername/passcode-generator.git
+cd passcode-generator
 ```
 
-Production mode:
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create a `.env` file in the root directory with the following variables:
+```env
+PORT=3001
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_ADMIN_CHAT_ID=your_admin_chat_id_here
+```
+
+4. Start the server:
 ```bash
 npm start
 ```
 
-## Project Structure
+## Data Storage
+
+The application automatically creates and manages the following data structure:
 
 ```
-src/
-├── config/         # Configuration files
-├── controllers/    # Request handlers
-├── middleware/     # Express middleware
-├── routes/         # API routes
-├── services/       # Business logic
-├── utils/          # Utility functions
-└── index.js        # Application entry point
+data/
+├── chats.json    // Stores authorized chat information
+└── passcode.json // Stores current passcode and generation time
 ```
 
-## Telegram Bot Commands
+These files are:
+- Created automatically on first run
+- Not included in the repository (gitignored)
+- Specific to each deployment
+- Persisted between server restarts
 
-Start a chat with your bot and use these commands:
+## Usage
 
-- `/start` - Initialize the bot and show available commands
-- `/help` - Show help message with available commands
+### Telegram Bot Commands
+
+#### Regular Commands
+- `/start` - Initialize the bot
+- `/help` - Show available commands
 - `/new` - Generate a new passcode
-- `/current` - Get the current passcode
-- `/schedule` - Set schedule (daily/weekly/monthly/infinite)
-- `/status` - Show current schedule status
+- `/current` - Get current passcode
+- `/schedule` - Show current schedule status
+- `/schedule [type]` - Set schedule (daily/weekly/monthly/infinite)
 
-## Schedule Control
+#### Admin Commands
+- `/addchat [chat_id]` - Add a new authorized chat
+- `/removechat [chat_id]` - Remove an authorized chat
+- `/listchats` - List all authorized chats with details
 
-You can control the passcode generation schedule through Telegram commands:
+### API Endpoints
 
-- Use `/schedule daily` to set daily schedule (generates at midnight every day)
-- Use `/schedule weekly` to set weekly schedule (generates at midnight every Sunday)
-- Use `/schedule monthly` to set monthly schedule (generates at midnight on the 1st of each month)
-- Use `/schedule infinite` to disable automatic generation
-- Use `/status` to check the current schedule status and next run time
+#### Validate Passcode
+```http
+POST /api/validate
+Content-Type: application/json
 
-By default, the bot starts with infinite schedule (no automatic generation).
-
-## API Endpoint
-
-### Get Current Passcode
-```
-GET /api/current
+{
+    "passcode": "your-passcode-here"
+}
 ```
 
 Response:
 ```json
 {
-    "passcode": "generated-uuid-here",
-    "generatedAt": "2024-01-20T12:34:56.789Z"
+    "isValid": true|false,
+    "message": "Passcode is valid"|"Passcode is invalid",
+    "generatedAt": "DD.MM.YYYY, HH:MM:SS"
 }
 ```
 
-## Logging
+## Security
 
-The application uses Winston for logging with the following features:
+- Only authorized chats can use the bot
+- Admin-only access to chat management
+- Passcode validation through secure API endpoint
+- Data files are not included in version control
 
-- Console output with colors
-- File logging for all messages in `logs/combined.log`
-- Separate error log file in `logs/error.log`
-- Timestamp and log level in each entry
-- Structured logging format
+## Development
 
-Log levels available:
-- error: For error messages
-- warn: For warning messages
-- info: For general information
-- debug: For detailed debugging information
+### Project Structure
+```
+src/
+├── config/
+│   └── config.js
+├── controllers/
+│   └── passcodeController.js
+├── routes/
+│   └── api.js
+├── services/
+│   ├── chatService.js
+│   ├── passcodeService.js
+│   ├── scheduleService.js
+│   └── telegramService.js
+└── utils/
+    ├── dateFormatter.js
+    └── logger.js
+```
 
-## Security Notes
+### Adding New Features
 
-- Keep your `.env` file secure and never commit it to version control
-- Monitor your Telegram bot's activity
-- The API endpoint is designed for local network use only 
+1. Create new service in `src/services/`
+2. Add routes in `src/routes/`
+3. Create controllers in `src/controllers/`
+4. Update environment variables if needed
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details. 
